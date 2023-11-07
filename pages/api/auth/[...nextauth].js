@@ -26,21 +26,41 @@ export const authOptions = {
         },
       },
       async authorize(credentials, req) {
-        const res = await fetch("http://127.0.0.1:8000/api/login", {
+        const response = await fetch("http://127.0.0.1:8000/api/login", {
           method: "POST",
           body: JSON.stringify(credentials),
           headers: { "Content-Type": "application/json" },
         });
-        const user = await res.json();
-        await console.log(user);
 
-        if (res.ok && user) {
-          return user;
+        if (response.ok) {
+          const res = await response.json();
+          console.log(res);
+
+          return res;
+        } else {
+          console.log("HTTP error! Status:", response.status);
+          // Handle non-successful response here, return an appropriate JSON response.
+          return { error: "Authentication failed" };
         }
         return null;
       },
     }),
   ],
+
+  callbacks: {
+    async jwt({ token, account, user }) {
+      if (user) {
+        token.user = user;
+        token.accessToken = user.access_token;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.accessToken = token.access_token;
+      session.user = token.user;
+      return session;
+    },
+  },
 };
 
 export default NextAuth(authOptions);
